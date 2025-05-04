@@ -12,12 +12,18 @@ import SoftButton from "components/SoftButton";
 import SoftBox from "components/SoftBox";
 import { toast, ToastContainer } from "react-toastify"; // Import Toastify components
 import "react-toastify/dist/ReactToastify.css"; // Import Toastify CSS
+import { formatDate } from "utils/formatDate";
+import UseStore from "utils/UseStore";
+import { NotificationAPI } from "utils/constants";
 
 function NotificationList({ title, Notifications }) {
-  const handleReuse = (id) => {
-    console.log(`Reuse notification with id: ${id}`);
-    // Display a success toast
-    toast.success("Notification reused!");
+
+  const { postData } = UseStore();
+
+  const handleReuse = async (id) => {
+    const response = await postData(NotificationAPI.reuse_Notification + id);
+    if (response.success) { toast.success(response.message); }
+    else { toast.error(response.message); }
   };
 
   return (
@@ -31,54 +37,65 @@ function NotificationList({ title, Notifications }) {
         <TableContainer>
           <Table>
             <TableBody>
-              {Notifications.map(({ id, image, title, description, date }, index) => (
-                <TableRow key={index}>
-                  {/* Title and Description */}
-                  <TableCell>
-                    <SoftBox display="flex" alignItems="center">
-                      <SoftAvatar
-                        src={image}
-                        alt="notification-avatar"
-                        variant="rounded"
-                        shadow="md"
-                        sx={{ mr: 2 }}
-                      />
-                      <SoftBox
-                        display="flex"
-                        flexDirection="column"
-                        alignItems="flex-start"
-                        justifyContent="center">
-                        <SoftTypography variant="button" fontWeight="medium">
-                          {title}
-                        </SoftTypography>
-                        <SoftTypography variant="caption" color="text">
-                          {description}
-                        </SoftTypography>
-                      </SoftBox>
-                    </SoftBox>
-                  </TableCell>
-
-                  {/* Date */}
-                  <TableCell align="center">
+              {Notifications.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} align="center">
                     <SoftTypography variant="caption" color="text">
-                      {date}
+                      No notifications available.
                     </SoftTypography>
                   </TableCell>
-
-                  {/* Action */}
-                  <TableCell align="center">
-                    <SoftButton color="info" variant="gradient" onClick={() => handleReuse(id)}>
-                      Reuse
-                    </SoftButton>
-                  </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                Notifications.map(({ image_url, title, description, date, _id }, index) => (
+                  <TableRow key={index}>
+                    {/* Title and Description */}
+                    <TableCell>
+                      <SoftBox display="flex" alignItems="center">
+                        <SoftAvatar
+                          src={image_url}
+                          alt="notification-avatar"
+                          variant="rounded"
+                          shadow="md"
+                          sx={{ mr: 2 }}
+                        />
+                        <SoftBox
+                          display="flex"
+                          flexDirection="column"
+                          alignItems="flex-start"
+                          justifyContent="center">
+                          <SoftTypography variant="button" fontWeight="medium">
+                            {title}
+                          </SoftTypography>
+                          <SoftTypography variant="caption" color="text">
+                            {description}
+                          </SoftTypography>
+                        </SoftBox>
+                      </SoftBox>
+                    </TableCell>
+
+                    {/* Date */}
+                    <TableCell align="center">
+                      <SoftTypography variant="caption" color="text">
+                        {date}
+                      </SoftTypography>
+                    </TableCell>
+
+                    {/* Action */}
+                    <TableCell align="center">
+                      <SoftButton color="info" variant="gradient" onClick={() => handleReuse(_id)}>
+                        Reuse
+                      </SoftButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+              
             </TableBody>
           </Table>
         </TableContainer>
       </SoftBox>
       {/* ToastContainer to display toast messages */}
-      <ToastContainer position="top-right" autoClose={3000}/>
+      <ToastContainer position="top-right" autoClose={3000} />
     </>
   );
 }

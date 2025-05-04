@@ -6,76 +6,60 @@ import SoftBox from "components/SoftBox";
 import SoftTypography from "components/SoftTypography";
 import SoftAvatar from "components/SoftAvatar";
 import SoftButton from "components/SoftButton";
-import { Dialog, DialogActions, DialogContent, DialogTitle, FormControl, MenuItem, Select } from "@mui/material";
+import { Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/material";
 import SoftInput from "components/SoftInput";
-import Coin from "assets/images/coins.png"
-import Diamond from "assets/images/diamond.png"
-import Booster from "assets/images/booster.png"
+import UseStore from "utils/UseStore";
+import { SettingsAPI } from "utils/constants";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function DailyRewardList({ title, DailyReward }) {
-  const [selectedAsset, setSelectedAsset] = useState('');
-  const [selectedVariant, setSelectedVariant] = useState('');
-  const [openReward, setOpenReward] = useState(false);
 
-  const handleOpenReward = () => setOpenReward(true); // Open the Reward modal
+  const [openReward, setOpenReward] = useState(false);
+  const [rewardId, setRewardId] = useState();
+  const [hours, setHours] = useState();
+  const [dayNumber, setDayNumber] = useState();
+  const { updateData } = UseStore();
+
+
+  const handleOpenReward = (id) => {
+    setOpenReward(true);
+    setRewardId(id);
+    setHours(DailyReward.find(reward => reward._id === id).hours_durations);
+    setDayNumber(DailyReward.find(reward => reward._id === id).dayNumber);
+  } // Open the Reward modal
   const handleCloseReward = () => setOpenReward(false); // Close the Reward modal
 
-  // Map assets to their respective variants and image URLs
-  const assetVariants = {
-    Coins: [
-      { name: 'Gold Coin', imageUrl: Coin },
-      { name: 'Silver Coin', imageUrl: Coin },
-      { name: 'Bronze Coin', imageUrl: Coin },
-    ],
-    Diamonds: [
-      { name: 'Red Diamond', imageUrl: Diamond },
-      { name: 'Blue Diamond', imageUrl: Diamond },
-      { name: 'Green Diamond', imageUrl: Diamond },
-    ],
-    Boosters: [
-      { name: 'Speed Booster', imageUrl: Booster },
-      { name: 'Energy Booster', imageUrl: Booster },
-      { name: 'Shield Booster', imageUrl: Booster },
-    ],
-  };
-
-  // Handle asset change
-  const handleAssetChange = (event) => {
-    setSelectedAsset(event.target.value);
-    setSelectedVariant(''); // Reset variant when asset changes
-  };
-
-  // Handle variant change
-  const handleVariantChange = (event) => {
-    setSelectedVariant(event.target.value);
-  };
-
   // Handle submit
-  const handleSubmit = (id) => {
-    console.log('Reward updated', { asset: selectedAsset, variant: selectedVariant });
-    handleCloseReward();
-  };
+  const handleSubmit = async () => {
 
+    const payload = {
+      hours_durations: hours,
+      dayNumber: dayNumber,
+    }
+    console.log("payload", payload);
+
+    const response = await updateData(SettingsAPI.Update_daily_reward, rewardId, payload);
+    console.log("response", response);
+    if (response.success) {
+      toast.success(response.message);
+      handleCloseReward();
+    }
+    else {
+      toast.error(response.message);
+    }
+  }
   const handleClose = () => {
-    setSelectedAsset('');
-    setSelectedVariant('');
     handleCloseReward();
   };
 
-  // Function to open the select dropdown on field click
-  const openAssetDropdown = () => {
-    document.getElementById('asset-select').click();
-  };
 
-  const openVariantDropdown = () => {
-    document.getElementById('variant-select').click();
-  };
-
-  const renderDailyReward = DailyReward.map(({ id,image, name, description }, index) => (
+  const renderDailyReward = DailyReward.map((reward, index) => (
+    // Conditionally render LoadingSpinner if DailyReward is empty or undefined
     <Grid item xs={12} sm={6} key={index}> {/* Use Grid item for each profile */}
-      <SoftBox component="li" display="flex" alignItems="center" py={1} mb={1} ml={2}  mr={1}>
+      <SoftBox component="li" display="flex" alignItems="center" py={1} mb={1} ml={2} mr={1}>
         <SoftBox mr={2}>
-          <SoftAvatar src={image} alt="something here" variant="rounded" shadow="md" />
+          <SoftAvatar src={reward.image_url} alt="something here" variant="rounded" shadow="md" />
         </SoftBox>
         <SoftBox
           display="flex"
@@ -84,10 +68,10 @@ function DailyRewardList({ title, DailyReward }) {
           justifyContent="center"
         >
           <SoftTypography variant="button" fontWeight="medium">
-            {name}
+            Day {reward.dayNumber}
           </SoftTypography>
           <SoftTypography variant="caption" color="text">
-            {description}
+            {reward.hours_durations} hours
           </SoftTypography>
         </SoftBox>
         <SoftBox ml="auto">
@@ -96,7 +80,7 @@ function DailyRewardList({ title, DailyReward }) {
             target="_blank"
             variant="gradient"
             color="info"
-            onClick={handleOpenReward}
+            onClick={() => handleOpenReward(reward._id)}
           >
             Edit
           </SoftButton>
@@ -107,7 +91,7 @@ function DailyRewardList({ title, DailyReward }) {
 
   return (
     <>
-      
+      <ToastContainer />
       <Card sx={{ height: "100%" }}>
         <SoftBox pt={2} px={2}>
           <SoftTypography variant="h6" fontWeight="medium" textTransform="capitalize">
@@ -116,93 +100,41 @@ function DailyRewardList({ title, DailyReward }) {
         </SoftBox>
         <SoftBox p={2}>
           <Grid container spacing={2}>
-            {renderDailyReward}
+            {!DailyReward || DailyReward.length === 0 ? (
+              <SoftBox p={2} display="flex" justifyContent="center" alignItems="center" height="100%" width="100%">
+                <SoftTypography variant="body2" color="text">
+                  No Data Available
+                </SoftTypography>
+              </SoftBox>
+            ) : (
+              renderDailyReward
+            )}
           </Grid>
         </SoftBox>
       </Card>
+
+
       <Dialog open={openReward} onClose={handleClose} maxWidth="sm" fullWidth>
         <SoftBox>
           <DialogTitle display="flex" alignItems="center" justifyContent="center" fontWeight="bold" fontSize="20px">
             Edit Rewards
           </DialogTitle>
           <DialogContent>
-            {/* Asset Dropdown */}
-            <SoftTypography sx={{ marginTop: 2 }} variant="body2">
-              Select Asset
-            </SoftTypography>
-            <SoftBox onClick={openAssetDropdown}>
-              <FormControl fullWidth variant="outlined" sx={{ marginBottom: 1 }}>
-                <Select
-                  id="asset-select"
-                  value={selectedAsset}
-                  onChange={handleAssetChange}
-                  label="Asset"
-                  defaultValue=""
-                  
-                >
-                  {Object.keys(assetVariants).map((asset) => (
-                    <MenuItem key={asset} value={asset}>
-                      {asset}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </SoftBox>
 
-            {/* Variant Dropdown */}
-            <SoftTypography sx={{ marginTop: 2 }} variant="body2">
-              Select Variant
-            </SoftTypography>
-            <SoftBox onClick={openVariantDropdown}>
-              <FormControl fullWidth variant="outlined" sx={{ marginBottom: 1 }}>
-                <Select
-                  id="variant-select"
-                  value={selectedVariant}
-                  onChange={handleVariantChange}
-                  label="Variant"
-                  defaultValue=""
-                  disabled={!selectedAsset}
-                  aria-label="Select a variant"
-                >
-                  {selectedAsset
-                    ? assetVariants[selectedAsset].map((variant) => (
-                      <MenuItem key={variant.name} value={variant.name}>
-                        <SoftBox sx={{ display: 'flex', alignItems: 'center' }}>
-                          <img
-                            src={variant.imageUrl}
-                            alt={variant.name}
-                            style={{ width: 20, height: 20, marginRight: 8 }}
-                          />
-                          <SoftTypography variant="body2">{variant.name}</SoftTypography>
-                        </SoftBox>
-                      </MenuItem>
-                    ))
-                    : [
-                      <MenuItem key="placeholder" value="" disabled>
-                        Select an asset first
-                      </MenuItem>,
-                    ]}
-                </Select>
-              </FormControl>
-            </SoftBox>
 
             {/* Quantity / Hours Input */}
             <SoftTypography sx={{ marginTop: 2 }} variant="body2">
-              Quantity / Hours
+              Hours
             </SoftTypography>
             <SoftInput
               variant="outlined"
               type="number"
-              placeholder="Enter quantity or hours"
+              placeholder="Enter hours"
               fullWidth
+              value={hours}
+              onChange={(e) => setHours(e.target.value)}
               onWheel={(e) => e.target.blur()}
             />
-
-            {/* Message Input */}
-            <SoftTypography sx={{ marginTop: 2 }} variant="body2">
-              Message
-            </SoftTypography>
-            <SoftInput placeholder="Message" variant="outlined" type="text" fullWidth multiline rows={4} />
           </DialogContent>
 
           <DialogActions>
@@ -214,7 +146,7 @@ function DailyRewardList({ title, DailyReward }) {
 
             <SoftBox mt={3} mb={1}>
               <SoftButton variant="gradient" color="info" fullWidth onClick={handleSubmit} sx={{ color: 'black' }}>
-                Send
+                Save
               </SoftButton>
             </SoftBox>
           </DialogActions>

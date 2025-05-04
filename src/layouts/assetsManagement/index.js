@@ -1,4 +1,4 @@
-import { Card, Grid, IconButton } from "@mui/material";
+import { Grid, IconButton } from "@mui/material";
 import { Upload } from "@mui/icons-material";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -7,36 +7,73 @@ import SoftBox from "components/SoftBox";
 import SoftTypography from "components/SoftTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DefaultProjectCard from "examples/Cards/ProjectCards/DefaultProjectCard";
-import { useRef, useState } from "react";
-import Coin from "assets/images/coins.png";
-import Diamond from "assets/images/diamond.png";
-import Booster from "assets/images/booster.png";
-import Avatar from "assets/images/avatar.png";
-import Frame from "assets/images/frame.png";
-import Dice from "assets/images/dice.png";
-import Bounty from "assets/images/bounty.png";
+import { useEffect, useRef, useState } from "react";
 import Sidenav from "../SideNavbar";
 import Slider from "react-slick";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
+import { AssetAPI,ImageURLAPI } from "utils/constants";
+import UseStore from "utils/UseStore";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function Overview() {
   const fileInputRef = useRef(null); // Reference to the hidden file input
-  const [image, setImage] = useState(null); // State to store the selected image
+  const { fetchData, postData } = UseStore(); // Fetch data from the store
+  const [section, setSection] = useState(); // State to store the selected section
+  const [data, setData] = useState([]); // State to store the fetched data
+  const [reload, setReload] = useState(false); // Add a state to trigger re-render
 
-  const handleUpload = () => {
-    console.log("Image upload triggered");
+
+  useEffect(() => {
+    const fetchAssets = async () => {
+      const response = await fetchData(AssetAPI.get_all_assets);
+      if (response.success) {
+        setData(response.data);
+      }
+      else {
+        toast.error(response.message);
+      }
+    };
+    fetchAssets();
+  }, [reload]);
+  const handleUpload = (section) => {
     fileInputRef.current.click(); // Trigger file input click
+    setSection(section);
   };
 
-  const handleFileChange = (event) => {
-    const file = event.target.files[0]; // Get the selected file
-    if (file) {
-      setImage(URL.createObjectURL(file)); // Create a temporary URL for the image
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0]; // Get the selected file
+    const formData = new FormData(); // Create a new FormData instance
+    formData.append("image", file); // Append the file to the FormData instance
+    formData.append("category", section.toLowerCase()); // Append the file to the FormData instance
+    const response = await postData(ImageURLAPI, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data', // Set the correct headers for file uploads
+      },
+    });
+
+    if (response.success) {
+      const newAssetData = {
+        category: section.toLowerCase(),
+        image_url: response.imageUrl,
+      }
+      
+      const dbresponse = await postData(AssetAPI.create_asset, newAssetData);
+
+      if (dbresponse.success) {
+        toast.success(dbresponse.message)
+        setReload(prev => !prev);
+      }
+      else {
+        toast.error(dbresponse.message)
+      }
+    }
+    else {
+      toast.error(response.message)
     }
   };
-
   const settings = {
-    dots: true,
+    dots: false,
     infinite: true,
     speed: 500,
     slidesToShow: 4,
@@ -49,71 +86,22 @@ function Overview() {
       { breakpoint: 480, settings: { slidesToShow: 1 } },
     ],
   };
-
-  // Card data specific to each section
+  
   const cardDataBySection = {
-    Coins: [
-      { id: "1", image: Coin, price: 100 },
-      { id: "2", image: Coin, price: 200 },
-      { id: "3", image: Coin, price: 200 },
-      { id: "4", image: Coin, price: 200 },
-      { id: "5", image: Coin, price: 200 },
-      { id: "6", image: Coin, price: 200 },
-    ],
-    Diamonds: [
-      { id: "1", image: Diamond, price: 100 },
-      { id: "2", image: Diamond, price: 200 },
-      { id: "3", image: Diamond, price: 200 },
-      { id: "4", image: Diamond, price: 200 },
-      { id: "5", image: Diamond, price: 200 },
-      { id: "6", image: Diamond, price: 200 },
-    ],
-    Boosters: [
-      { id: "1", image: Booster, price: 100 },
-      { id: "2", image: Booster, price: 200 },
-      { id: "3", image: Booster, price: 200 },
-      { id: "4", image: Booster, price: 200 },
-      { id: "5", image: Booster, price: 200 },
-      { id: "6", image: Booster, price: 200 },
-    ],
-    Avatars: [
-      { id: "1", image: Avatar, price: 100 },
-      { id: "2", image: Avatar, price: 200 },
-      { id: "3", image: Avatar, price: 200 },
-      { id: "4", image: Avatar, price: 200 },
-      { id: "5", image: Avatar, price: 200 },
-      { id: "6", image: Avatar, price: 200 },
-    ],
-    Dice: [
-      { id: "1", image: Dice, price: 100 },
-      { id: "2", image: Dice, price: 200 },
-      { id: "3", image: Dice, price: 200 },
-      { id: "4", image: Dice, price: 200 },
-      { id: "5", image: Dice, price: 200 },
-      { id: "6", image: Dice, price: 200 },
-    ],
-    Frames: [
-      { id: "1", image: Frame, price: 100 },
-      { id: "2", image: Frame, price: 200 },
-      { id: "3", image: Frame, price: 200 },
-      { id: "4", image: Frame, price: 200 },
-      { id: "5", image: Frame, price: 200 },
-      { id: "6", image: Frame, price: 200 },
-    ],
-    Bounty: [
-      { id: "1", image: Bounty, price: 100 },
-      { id: "2", image: Bounty, price: 200 },
-      { id: "3", image: Bounty, price: 200 },
-      { id: "4", image: Bounty, price: 200 },
-      { id: "5", image: Bounty, price: 200 },
-      { id: "6", image: Bounty, price: 200 },
-    ],
+    Coins: data.filter(item => item.category.toLowerCase() === "coins"),
+    Diamonds: data.filter(item => item.category.toLowerCase() === "diamonds"),
+    Boosters: data.filter(item => item.category.toLowerCase() === "boosters"),
+    Avatars: data.filter(item => item.category.toLowerCase() === "avatars"),
+    Dice: data.filter(item => item.category.toLowerCase() === "dice"),
+    Frames: data.filter(item => item.category.toLowerCase() === "frames"),
+    Bounty: data.filter(item => item.category.toLowerCase() === "bounty"),
   };
 
   const sections = Object.keys(cardDataBySection);
 
   return (
     <DashboardLayout>
+      <ToastContainer autoClose={2000}/>
       <DashboardNavbar />
       <Sidenav />
 
@@ -137,7 +125,7 @@ function Overview() {
                 onChange={handleFileChange}
               />
               <IconButton
-                onClick={handleUpload}
+                onClick={() => handleUpload(section)}
                 sx={{
                   position: "absolute",
                   top: "10px",
@@ -163,9 +151,8 @@ function Overview() {
                       sx={{ padding: "10px" }}
                     >
                       <DefaultProjectCard
-                        image={card.image}
-                        price={card.price}
-                        id={card.id}
+                        image={card.image_url}
+                        id={card._id}
                         flag={true}
                       />
                     </Grid>

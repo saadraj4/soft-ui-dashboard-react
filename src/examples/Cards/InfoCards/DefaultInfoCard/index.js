@@ -4,6 +4,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import SoftBox from "components/SoftBox";
 import SoftTypography from "components/SoftTypography";
 import { IconButton } from "@mui/material";
+import { ConvertNumber } from "utils/ConvertNumber";
 
 function DefaultInfoCard({ id,color, icon, title, value }) {
   
@@ -77,7 +78,7 @@ function DefaultInfoCard({ id,color, icon, title, value }) {
             borderRadius: "12px",
           }}
         >
-          {value}
+          {ConvertNumber(value)}
         </SoftTypography>
       </SoftBox>
     </Card>

@@ -6,7 +6,6 @@ import MiniStatisticsCard from "examples/Cards/StatisticsCards/MiniStatisticsCar
 import Users from "./components/recentRegistration"
 import Purchase from "./components/recentPurchase"
 import PurchaseData from "./data/PurchaseData"
-import profilesListData from "./data/RecentRegistrationData";
 import Notifications from "./components/notifications";
 import TOP5Players from "./components/top5Players";
 import TOP5PlayersData from "./data/Top5PlayersData"
@@ -14,24 +13,75 @@ import Sidenav from "../SideNavbar";
 import Player from "assets/players.png"
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import PeopleSharpIcon from '@mui/icons-material/PeopleSharp';
+import { useEffect, useState } from "react";
+import UseStore from "utils/UseStore";
+import LoadingSpinner from "components/LoadingSpinner";
+import { DashboardAPI } from 'utils/constants';
+
 
 function Dashboard() {
+  const [registeredPlayersCount, setRegisteredPlayersCount] = useState(null); // State to hold the number of registered players
+  const [totalCoins, setTotalCoins] = useState(null); // State to hold the number of registered players
+  const [onlinePlayer, setonlinePlayer] = useState(null); // State to hold the number of registered players
+  const [recentRegistrations, setRecentRegistrations] = useState(null); // New state for recent registrations
+  const [leaguePlayers, setLeaguePlayers] = useState([]); // New state for league players
+  const { fetchData } = UseStore(); // Fetch data from the store
+  useEffect(() => {
+    // Fetch the number of registered players
+    const fetchRegisteredPlayers = async () => {
+      const response = await fetchData(DashboardAPI.registeredPlayers);
+      setRegisteredPlayersCount(response.totalRegisteredPlayers);
+    }
+
+    const TotalWinningCoins = async () => {
+      const response = await fetchData(DashboardAPI.totalWinningCoins);
+      setTotalCoins(response.totalWinningFee);
+    }
+
+    const getOnlinePlayers = async () => {
+      const response = await fetchData(DashboardAPI.onlinePlayers);
+      setonlinePlayer(response.online_players);
+    }
+    const fetchRecentRegistrations = async () => {
+      const response = await fetchData(DashboardAPI.recentRegistrations); // Fetch the recent registrations data
+      console.log(response);
+      if(response.success){
+      setRecentRegistrations(response.latestPlayers); // Assuming the response is the data you want to pass to the Users component
+    }
+  
+  };
+    const fetchLeaguePlayers = async () => {
+      const response = await fetchData(DashboardAPI.leaguePlayers); // Fetch the league players data
+      setLeaguePlayers(response.leaguePlayers); // Assuming the response is the data you want to pass to the TOP5Players component
+    };
+
+
+    fetchRegisteredPlayers();
+    TotalWinningCoins();
+    getOnlinePlayers();
+    fetchRecentRegistrations()
+    fetchLeaguePlayers();
+  }, []);
+
+
+
+
   const data = [
     {
       title: "No. of Players",
-      count: "500",
+      count: registeredPlayersCount !== null ? registeredPlayersCount : <LoadingSpinner />,
       percentage: { color: "success", text: "+55%" },
       icon: { color: "info", component: PeopleSharpIcon },
     },
     {
       title: "Fee Coins",
-      count: "2300",
+      count: totalCoins !== null ? totalCoins : <LoadingSpinner />,
       percentage: { color: "success", text: "+3%" },
       icon: { color: "info", component: Player },
     },
     {
       title: "Online Player",
-      count: "346",
+      count: onlinePlayer !== null ? onlinePlayer : <LoadingSpinner />,
       percentage: { color: "error", text: "-2%" },
       icon: { color: "info", component: Player },
     },
@@ -42,7 +92,7 @@ function Dashboard() {
       icon: { color: "info", component: Player },
     },
   ]
-  
+
   return (
     <>
       <Sidenav />
@@ -68,7 +118,7 @@ function Dashboard() {
           <SoftBox mt={5} mb={3}>
             <Grid container spacing={3}>
               <Grid item xs={12} md={6} xl={4}>
-                <Users title="Recent Registation" profiles={profilesListData} />
+                <Users title="Recent Registation" profiles={recentRegistrations} />
               </Grid>
               <Grid item xs={12} md={6} xl={4}>
                 {/* Another Item  need to be here*/}
@@ -82,70 +132,10 @@ function Dashboard() {
             </Grid>
           </SoftBox>
 
-          <TOP5Players title="League Players" profiles={TOP5PlayersData} />
-
-
-
-          {/* Build B developers and Work With Rockets Section */}
-          {/* <SoftBox mb={3}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} lg={7}>
-              <BuildByDevelopers />
-            </Grid>
-            <Grid item xs={12} lg={5}>
-              <WorkWithTheRockets />
-            </Grid>
-          </Grid>
-        </SoftBox>
-        <SoftBox mb={3}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} lg={5}>
-              <ReportsBarChart
-                title="active users"
-                description={
-                  <>
-                    (<strong>+23%</strong>) than last week
-                  </>
-                }
-                chart={chart}
-                items={items}
-              />
-            </Grid>
-            <Grid item xs={12} lg={7}>
-              <GradientLineChart
-                title="Sales Overview"
-                description={
-                  <SoftBox display="flex" alignItems="center">
-                    <SoftBox fontSize={size.lg} color="success" mb={0.3} mr={0.5} lineHeight={0}>
-                      <Icon className="font-bold">arrow_upward</Icon>
-                    </SoftBox>
-                    <SoftTypography variant="button" color="text" fontWeight="medium">
-                      4% more{" "}
-                      <SoftTypography variant="button" color="text" fontWeight="regular">
-                        in 2021
-                      </SoftTypography>
-                    </SoftTypography>
-                  </SoftBox>
-                }
-                height="20.25rem"
-                chart={gradientLineChartData}
-              />
-            </Grid>
-          </Grid>
-        </SoftBox> 
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6} lg={8}>
-            <Projects />
-          </Grid>
-          <Grid item xs={12} md={6} lg={4}>
-            <OrderOverview />
-          </Grid>
-        </Grid>*/}
-
-
+          {/* <TOP5Players title="League Players" profiles={TOP5PlayersData} /> */}
+          <TOP5Players title="League Players" profiles={leaguePlayers} />
 
         </SoftBox>
-        {/* <Footer /> */}
       </DashboardLayout>
     </>
   );

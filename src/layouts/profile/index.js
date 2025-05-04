@@ -4,14 +4,16 @@ import SoftBox from "components/SoftBox";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import ProfileInfoCard from "examples/Cards/InfoCards/ProfileInfoCard";
 import SideNavbar from "layouts/SideNavbar"
-import { useState } from "react";
-import team2 from "assets/images/team-2.jpg";
+import { useState,useEffect } from "react";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import SoftButton from "components/SoftButton";
 import { Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/material";
 import SoftTypography from "components/SoftTypography";
 import SoftInput from "components/SoftInput";
-
+import { toast,ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import UseStore from "utils/UseStore";
+import { AdminProfileAPI } from "utils/constants";
 
 function Overview() {
     const [open, setOpen] = useState(false);
@@ -19,27 +21,51 @@ function Overview() {
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     
+    const [adminData, setAdminData] = useState({});
+    const { fetchData, updateAdmin } = UseStore();
+
+    useEffect(() => {
+        const getAdminData = async () => {
+          const response = await fetchData(AdminProfileAPI.get_profile);
+          setAdminData(response.admin);
+
+        };
+        getAdminData();
+    },[adminData]);
+    
   const handleClickOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
-    const handleSave = () => {
+    const handleSave = async() => {
       // Password validation logic
       if (newPassword !== confirmPassword) {
-        alert("New password and confirm password do not match!");
+        toast.error("New password and confirm password do not match!");
         return;
       }
-      // Here you can call an API to verify the old password and update the new details
-      console.log("Old Password:", oldPassword);
-      console.log("New Password:", newPassword);
-      console.log("Updated Info:", formData);
-  
+      const payload = {
+        email: adminData.email,
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+        newConfirmPassowrd: confirmPassword,
+      }
+      const response = await updateAdmin(AdminProfileAPI.update_password, payload);
+      console.log(response);
+      if(response.success){
+        toast.success(response.message);
+        handleClose();
+      }
+      else{
+        toast.error(response.message);
+      }
+      
       // Close the modal after saving
-      handleClose();
     };
   
   return (
     <DashboardLayout>
       <SideNavbar />
+      <ToastContainer />
+
       <DashboardNavbar />
       <SoftBox display="flex" justifyContent="flex-end" p={2}>
         <SoftButton variant="contained" color="info" onClick={handleClickOpen}>
@@ -51,7 +77,7 @@ function Overview() {
           <Grid item xs={12} md={6} xl={4}>
 
             <Card>
-              <img src={team2} alt="Admin Image" style={{ width: "100%", borderRadius: "8px" }} />
+              <img src={adminData.avatar} alt="Admin Image" style={{ width: "100%", borderRadius: "8px" }} />
             </Card>
           </Grid>
 
@@ -59,12 +85,10 @@ function Overview() {
           <Grid item xs={12} md={12} xl={8}>
             <ProfileInfoCard
               title="profile information"
-              description="Hi, I’m Alec Thompson, Decisions: If you can’t decide, the answer is no. If two equally difficult paths, choose the one more painful in the short term (pain avoidance is creating an illusion of equality)."
               info={{
-                fullName: "Alec M. Thompson",
-                mobile: "(44) 123 1234 123",
-                email: "alecthompson@mail.com",
-                location: "USA",
+                fullName: adminData.full_name,
+                email: adminData.email,
+              
               }}
               action={{ tooltip: "Edit Profile" }}
             />

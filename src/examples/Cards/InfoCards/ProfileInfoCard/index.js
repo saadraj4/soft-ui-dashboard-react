@@ -10,21 +10,83 @@ import SoftTypography from "components/SoftTypography";
 import { Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/material";
 import SoftInput from "components/SoftInput";
 import SoftButton from "components/SoftButton";
+import { useDropzone } from "react-dropzone";
+import { ImageURLAPI } from "utils/constants";
+import UseStore from "utils/UseStore";
+import { AdminProfileAPI } from "utils/constants";
+import { toast,ToastContainer } from "react-toastify";
 
-function ProfileInfoCard({ title, description, info, action }) {
+
+function ProfileInfoCard({ title, description, info, action }, index) {
 
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState(info);
+  const [name, setName] = useState(info.fullName);
+  const [email, setEmail] = useState(info.email);
+  const [imageURL, setImageURL] = useState(""); // State to store the image URL
+  const [previewImage, setPreviewImage] = useState(null);
+  const { postData,updateAdmin } = UseStore();
 
   const handleClickOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
-  const handleSave = () => {
-    consile.log(formData);
-    // Close the modal after saving
-    handleClose();
+  const onDrop = (acceptedFiles) => {
+    if (acceptedFiles.length > 0) {
+      const file = acceptedFiles[0];
+      const previewUrl = URL.createObjectURL(file);
+      setPreviewImage(previewUrl);
+
+      // Trigger callback to parent component (if needed)
+      handleImageChange(file);
+    }
   };
 
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: "image/*", multiple: false });
+
+
+  const handleSave = async () => {
+    const payload = {
+      full_name: name,
+      email: email,
+      avatar: imageURL
+    }
+    const response = await updateAdmin(AdminProfileAPI.update_admin, payload);
+    console.log(response);
+    if (response.success) {
+      toast.success(response.message);
+     
+      handleClose();
+      setName("");
+      setEmail("");
+      setImageURL("");
+    }
+    else {
+      toast.error(response.message);
+    }
+
+
+  };
+
+  const handleImageChange = async (file) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    formData.append("category", "others");
+    const response = await postData(ImageURLAPI, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data', // Set the correct headers for file uploads
+      },
+    });
+    if (response.success) {
+      console.log("response url", response.imageUrl);
+
+      // Set the image URL
+      setImageURL(response.imageUrl);
+
+    }
+    else {
+      toast.error("Failed to upload image");
+    }
+
+  };
   const labels = [];
   const values = [];
 
@@ -46,7 +108,7 @@ function ProfileInfoCard({ title, description, info, action }) {
 
   // Render the card info items
   const renderItems = labels.map((label, key) => (
-    <SoftBox key={label} display="flex" py={1} pr={2} mt={1}>
+    <SoftBox key={key} display="flex" py={1} pr={2} mt={1}>
       <SoftTypography variant="button" fontWeight="bold" textTransform="capitalize">
         {label}: &nbsp;
       </SoftTypography>
@@ -86,76 +148,104 @@ function ProfileInfoCard({ title, description, info, action }) {
       </SoftBox>
 
       {/* Modal for editing information */}
-      <Dialog
-        open={open}
-        onClose={handleClose}
-        width="sm"
-        sx={{
-          "& .MuiDialog-paper": {
-            // minWidth: "400px", 
-            maxWidth: "600px",
-            width: "80%",
-            height: "auto",
-            padding: "20px", // Add padding inside the modal
-            borderRadius: "8px",
-          },
-        }}
-      >
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle
-          sx={{
-            fontSize: "1.5rem", // Adjust font size for title
-            fontWeight: "bold", // Make title bold
-            paddingBottom: "10px", // Add spacing below the title
-            textAlign: "center", // Center the title text
-          }}
-        >
-          Edit Information
+          display="flex" alignItems="center" justifyContent="center"
+          fontWeight="bold" fontSize="20px"
+        >Edit information
+
         </DialogTitle>
-        <DialogContent sx={{ paddingBottom: "16px" }}>
+        <DialogContent>
+          <SoftTypography sx={{ marginTop: 1 }} variant="body2">
+            Full Name
+          </SoftTypography>
+          {/* Player Name Field */}
+          <SoftInput
+            placeholder="Name"
+            variant="outlined"
+            fullWidth
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
 
-          {/* Add other fields for user info as needed */}
-          {Object.keys(formData).map((key) => (
-            <>
-              <SoftTypography variant="h6">
-                {key}
-              </SoftTypography>
+          <SoftTypography sx={{ marginTop: 2 }} variant="body2">
+            Email
+          </SoftTypography>
+          {/* Email Field */}
+          <SoftInput
+            placeholder="Email"
+            variant="outlined"
+            fullWidth
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
 
-              <SoftInput
-                key={key}
-                placeholder={key.replace(/([A-Z])/g, " $1")}
-                fullWidth
-                value={formData[key]}
-                onChange={(e) =>
-                  setFormData({ ...formData, [key]: e.target.value })
-                }
-                sx={{ mb: 2 }} // Increased margin-bottom for spacing between fields
+          {/* Image Upload Field */}
+          <SoftTypography sx={{ marginTop: 2 }} variant="body2">
+            Profile Image
+          </SoftTypography>
+
+          <SoftBox
+            {...getRootProps()}
+            style={{
+              border: "2px dashed #3a3bf1",
+              padding: "20px",
+              textAlign: "center",
+              borderRadius: "8px",
+              cursor: "pointer",
+              background: isDragActive ? "#f0f4ff" : "white",
+              position: "relative",
+              height: "155px",
+              width: "100%",
+              overflow: "hidden",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <input {...getInputProps()} />
+            {previewImage ? (
+              <img
+                src={previewImage}
+                alt="Preview"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  borderRadius: "8px",
+                }}
               />
-            </>
-          ))}
+            ) : isDragActive ? (
+              <p>Drop the image here...</p>
+            ) : (
+              <p>Drag & drop an image, or click to select one</p>
+            )}
+          </SoftBox>
         </DialogContent>
-        <DialogActions sx={{ justifyContent: "center", padding: "16px" }}>
-          <SoftButton
-            onClick={handleClose}
-            color="secondary"
-            variant="contained"
-            sx={{
-              padding: "8px 16px", // Adjust button padding
-              borderRadius: "4px", // Rounded corners for buttons
-            }}
-          >
-            Cancel
-          </SoftButton>
-          <SoftButton
-            onClick={handleSave}
-            color="info"
-            variant="gradient"
-            sx={{
-              padding: "8px 16px", // Adjust SoftButton padding
-              borderRadius: "4px", // Rounded corners for SoftButtons
-            }}
-          >
-            Save
-          </SoftButton>
+        <DialogActions>
+          <SoftBox mt={4} mb={1}>
+            <SoftButton
+              variant="gradient"
+              color="secondary"
+              fullWidth
+              onClick={handleClose}
+              sx={{ color: "black" }}
+            >
+              Cancel
+            </SoftButton>
+          </SoftBox>
+
+          <SoftBox mt={4} mb={1}>
+            <SoftButton
+              variant="gradient"
+              color="info"
+              fullWidth
+              onClick={handleSave}
+              sx={{ color: "black" }}
+            >
+              Update Information
+            </SoftButton>
+          </SoftBox>
         </DialogActions>
       </Dialog>
 

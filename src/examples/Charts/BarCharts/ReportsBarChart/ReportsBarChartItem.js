@@ -1,32 +1,12 @@
 import PropTypes from "prop-types";
-import Icon from "@mui/material/Icon";
-import typography from "assets/theme/base/typography";
 import SoftBox from "components/SoftBox";
 import SoftTypography from "components/SoftTypography";
-import SoftProgress from "components/SoftProgress";
 
 function ReportsBarChartItem({ color, icon, label, progress }) {
-  const { size } = typography;
 
   return (
     <SoftBox width="100%">
-      <SoftBox display="flex" alignItems="center" mb={2}>
-        <SoftBox
-          bgColor={icon.color}
-          width="2rem"
-          height="2rem"
-          borderRadius="sm"
-          color="white"
-          fontSize={size.xs}
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          shadow="md"
-          mr={1}
-          variant="gradient"
-        >
-          <Icon>{icon.component}</Icon>
-        </SoftBox>
+      <SoftBox display="flex" alignItems="center" mb={1}>
         <SoftTypography
           variant="caption"
           textTransform="capitalize"
@@ -37,7 +17,7 @@ function ReportsBarChartItem({ color, icon, label, progress }) {
         </SoftTypography>
       </SoftBox>
       <SoftBox mt={1}>
-        <SoftTypography variant="h4" fontWeight="bold" color={color}>
+        <SoftTypography variant="h4" fontWeight="bold" color={color} ml={1}>
           {progress.content}
         </SoftTypography>
         

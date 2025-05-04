@@ -1,49 +1,52 @@
 import { useState } from "react";
-import Card from "@mui/material/Card";
 import SoftBox from "components/SoftBox";
 import SoftTypography from "components/SoftTypography";
 import Pagination from "@mui/material/Pagination";
-import { Dialog, DialogActions, DialogContent, DialogTitle, Button, TextField } from "@mui/material";
+import { Dialog, DialogActions, DialogContent, DialogTitle, Button, TextField, Tabs, Tab } from "@mui/material";
 import { useDropzone } from "react-dropzone";
-
-// Soft UI Dashboard React components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Table from "examples/Tables/Table";
-
-// Data
-import authorsTableData from "./data/UserTableData";
+import axios from "axios";
+import { BASEURL, ImageURLAPI } from "utils/constants";
+import UserTableData from "./data/UserTableData";
 import SoftButton from "components/SoftButton";
 import SideNav from "../SideNavbar"
 import SoftInput from "components/SoftInput";
+import UseStore from "utils/UseStore";
+import { UserAPI } from "utils/constants";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+
 
 
 function UserManagement() {
 
-  const { columns, rows } = authorsTableData;
+  const { columns, rows } = UserTableData();
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5; // Show 5 rows per page
   const [openModal, setOpenModal] = useState(false); // State to open/close modal
-  const [newPlayer, setNewPlayer] = useState(""); // State to store the new player's name
+  const [firstName, setFirstName] = useState(""); // State to store the new player's first name
+  const [lastName, setLastName] = useState(""); // State to store the new player's last name
   const [newImage, setNewImage] = useState(null);
   const [newEmail, setNewEmail] = useState("");
   const [previewImage, setPreviewImage] = useState(null);
   const [searchText, setSearchText] = useState("");
+  const [selectedTab, setSelectedTab] = useState(0); // State for tab selection
+  const [imageURL, setImageURL] = useState("https://via.placeholder.com/150"); // State to store the image URL
+  const { postData,fetchData } = UseStore();
 
 
   // Calculate the index for slicing the rows
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
   const currentRows = rows.slice(indexOfFirstRow, indexOfLastRow);
-  const onDrop = (acceptedFiles) => {
-    if (acceptedFiles.length > 0) {
-      const file = acceptedFiles[0];
-      const previewUrl = URL.createObjectURL(file);
-      setPreviewImage(previewUrl);
-
-      // Trigger callback to parent component (if needed)
-      handleImageChange(file);
-    }
+  const onDrop = async (acceptedFiles) => {
+    const file = acceptedFiles[0];
+    const previewUrl = URL.createObjectURL(file);
+    setPreviewImage(previewUrl);
+    handleImageChange(file);
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: "image/*", multiple: false });
@@ -52,7 +55,11 @@ function UserManagement() {
   const handlePageChange = (event, value) => {
     setCurrentPage(value);
   };
-
+  // handle tab change
+  const handleTabChange = (event, newValue) => {
+    setSelectedTab(newValue);
+    setCurrentPage(1); // Reset pagination when switching tabs
+  };
   // Open Modal
   const handleOpenModal = () => {
     setOpenModal(true);
@@ -69,41 +76,84 @@ function UserManagement() {
     setOpenModal(false);
   };
 
-  // Handle New Player Input Change
-  const handleInputChange = (event) => {
-    setNewPlayer(event.target.value);
-  };
-  const handleImageChange = (file) => {
-    // Get the selected file
-    setNewImage(file);
+  const handleFirstNameChange = (event) => {
+    setFirstName(event.target.value);
   };
 
-const handleSearch = () => {
-  console.log("Search Triggered:", searchText);
-};
+  const handleLastNameChange = (event) => {
+    setLastName(event.target.value);
+  };
+
+
+  const handleImageChange = async (file) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    formData.append("category", "bot-image");
+    const response = await postData(ImageURLAPI, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data', // Set the correct headers for file uploads
+      },
+    });
+
+    if (response.success) {
+      console.log("response url", response.imageUrl);
+
+      // Set the image URL
+      setImageURL(response.imageUrl);
+      setNewImage(file);
+    }
+    else {
+      toast.error("Failed to upload image");
+    }
+  };
+
+  const handleSearch = async () => {
+    const response = await fetchData(UserAPI.search_player + searchText);
+
+    console.log("Search Response:", response);
+  };
 
 
 
   // Handle Add New Player
-  const handleAddPlayer = () => {
-    if (newPlayer) {
-      const newPlayerData = {
-        name: newPlayer,
-        type: "Bot", // You can set additional attributes for the bot player
-      };
-
-      // Add the new player to the rows (this could be saved to state or updated in the backend)
-      // For simplicity, we're adding to the original rows here, but you'd want to handle this differently in a real app
-      rows.push(newPlayerData);
-
-      // Reset the newPlayer input and close the modal
-      setNewPlayer("");
-      handleCloseModal();
+  const handleAddPlayer = async () => {
+    const newPlayerData = {
+      first_name: firstName,
+      last_name: lastName,
+      email: newEmail,
+      avatar: imageURL,
+      is_bot: true,
+    };
+    const response = await postData(UserAPI.create_player, newPlayerData);
+    console.log(response);
+    if (response && response.success) {
+      toast.success(response.message);
     }
+    else {
+      toast.error(response.message);
+    }
+
+    setFirstName("");
+    setLastName("");
+    setNewEmail("");
+    setPreviewImage(null);
+    handleCloseModal();
+
   };
+
+  const filteredRealUsers = rows.filter(row => row.is_bot === false);
+  const filteredBotPlayers = rows.filter(row => row.is_bot === true);
+
+  const filteredRows = selectedTab === 0
+    ? filteredRealUsers.slice(indexOfFirstRow, indexOfLastRow) // Real users paginated
+    : filteredBotPlayers.slice(indexOfFirstRow, indexOfLastRow); // Bot players paginated
+
+  const totalRows = selectedTab === 0 ? filteredRealUsers.length : filteredBotPlayers.length;
+
 
   return (
     <DashboardLayout>
+      <ToastContainer />
       <SideNav />
       <DashboardNavbar />
       <SoftBox py={3}>
@@ -154,6 +204,31 @@ const handleSearch = () => {
                 Search
               </SoftButton>
             </SoftBox>
+            <SoftBox mt={2}>
+              <Tabs
+                value={selectedTab}
+                onChange={handleTabChange}
+                indicatorColor="info"
+                textColor="primary"
+                centered
+
+
+              >
+                <Tab label="Real Users" sx={{
+                  '&.Mui-selected': {
+                    color: 'black',
+                    backgroundColor: 'info.main'
+                  },
+                }} />
+                <Tab label="Bot Players" sx={{
+                  '&.Mui-selected': {
+                    color: 'black',
+                    backgroundColor: 'info.main'
+                  },
+                }} />
+              </Tabs>
+            </SoftBox>
+
           </SoftBox>
 
           {/* Table */}
@@ -165,15 +240,15 @@ const handleSearch = () => {
                     `${borderWidth[1]} solid ${borderColor}`,
                 },
               },
-            }}
-          >
-            <Table columns={columns} rows={currentRows} />
+            }}>
+
+            <Table columns={columns} rows={filteredRows} />
           </SoftBox>
 
           {/* Pagination */}
           <SoftBox display="flex" justifyContent="center" mt={3}>
             <Pagination
-              count={Math.ceil(rows.length / rowsPerPage)} // Calculate number of pages
+              count={Math.ceil(totalRows / rowsPerPage)} // Calculate number of pages
               page={currentPage}
               onChange={handlePageChange}
               color="info"
@@ -195,17 +270,30 @@ const handleSearch = () => {
 
         </DialogTitle>
         <DialogContent>
-          <SoftTypography sx={{ marginTop: 2 }} variant="body2">
-            Player Name
-          </SoftTypography>
-          {/* Player Name Field */}
-          <SoftInput
-            placeholder="Player Name"
-            variant="outlined"
-            fullWidth
-            value={newPlayer}
-            onChange={handleInputChange}
-          />
+          <SoftBox style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+            <SoftBox style={{ flex: 1 }}>
+              <SoftTypography variant="body2">First Name</SoftTypography>
+              {/* First Name Field */}
+              <SoftInput
+                placeholder="First Name"
+                variant="outlined"
+                fullWidth
+                value={firstName}
+                onChange={handleFirstNameChange}
+              />
+            </SoftBox>
+            <SoftBox style={{ flex: 1 }}>
+              <SoftTypography variant="body2">Last Name</SoftTypography>
+              {/* Last Name Field */}
+              <SoftInput
+                placeholder="Last Name"
+                variant="outlined"
+                fullWidth
+                value={lastName}
+                onChange={handleLastNameChange}
+              />
+            </SoftBox>
+          </SoftBox>
 
           <SoftTypography sx={{ marginTop: 2 }} variant="body2">
             Email
@@ -219,12 +307,11 @@ const handleSearch = () => {
             onChange={(e) => setNewEmail(e.target.value)}
           />
 
-          {/* Image Upload Field */}
           <SoftTypography sx={{ marginTop: 2 }} variant="body2">
             Player Image
           </SoftTypography>
-
-          <div
+          {/* Image Upload Field */}
+          <SoftBox
             {...getRootProps()}
             style={{
               border: "2px dashed #3a3bf1",
@@ -259,8 +346,9 @@ const handleSearch = () => {
             ) : (
               <p>Drag & drop an image, or click to select one</p>
             )}
-          </div>
+          </SoftBox>
         </DialogContent>
+
         <DialogActions>
           <SoftBox mt={4} mb={1}>
             <SoftButton

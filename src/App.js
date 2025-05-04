@@ -28,10 +28,12 @@ import createCache from "@emotion/cache";
 
 // Soft UI Dashboard React routes
 import routes from "routes";
-import OTPVerification from "./layouts/authentication/components/OTP-Input";
+import LoginOTP from "./layouts/authentication/components/Login-OTP";
 import UserProfile from "./layouts/userManagement/UserProfile";
 import ResetPassword from "./layouts/authentication/forget-password";
 import Transaction from "./layouts/dashboard/components/transactions";
+import PasswordScreen from "./layouts/authentication/passwordScreen";
+import ResetPasswordOtp from "./layouts/authentication/components/Reset-Password-OTP";
 // Soft UI Dashboard React contexts
 import { useSoftUIController, setMiniSidenav, setOpenConfigurator } from "context";
 
@@ -155,11 +157,14 @@ export default function App() {
       {layout === "vr" && <Configurator />}
       <Routes>
       <Route path="/" element={<Navigate to="/authentication/sign-in" />} />
-      <Route path="/authentication/otp-verification" element={<OTPVerification />} />
+      <Route path="/admin/login-verify" element={<LoginOTP />} />
       <Route path="/NotFound" element={<NotFound />} />
-      <Route path="/authentication/Reset-Password" element={<ResetPassword />} />
       <Route path="/user-profile/:id" element={<UserProfile />} />
       <Route path="/dashboard/transactions" element={<Transaction />} />
+      <Route path="/authentication/Reset-Password" element={<ResetPassword />} />
+      <Route path="/admin/reset-password-verify" element={<ResetPasswordOtp />} />
+      <Route path="/authentication/Reset-Password/Change-Password" element={<PasswordScreen />} />
+
 
         {getRoutes(routes)}
         <Route path="*" element={<Navigate to="/NotFound" />} />

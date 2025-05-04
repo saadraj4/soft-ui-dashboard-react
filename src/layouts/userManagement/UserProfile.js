@@ -20,6 +20,7 @@ import Transactions from "./Transactions";
 import SideNavbar from "../SideNavbar";
 import SoftInput from "components/SoftInput";
 import image1 from "assets/images/team-1.jpg";
+import CoinsHistoryList from "./coinsHistory/CoinsHistoryList";
 
 function Tables() {
     const { columns, rows } = AffiliateInvitees;
@@ -117,9 +118,24 @@ function Tables() {
 
 
 
-                <SoftBox mb={3}>
+                {/* <SoftBox mb={3}>
                     <Transactions />
+                </SoftBox> */}
+                <SoftBox mb={3}>
+                    <Grid container spacing={3}>
+                        {/* Left side: Transactions */}
+                        <Grid item xs={12} lg={6}>
+                            <Transactions />
+                        </Grid>
+
+                        {/* Right side: Coins History */}
+                        <Grid item xs={12} lg={6}>
+                            <CoinsHistoryList />
+                        </Grid>
+                    </Grid>
                 </SoftBox>
+
+
                 <SoftBox mb={3}>
                     <Card>
                         <SoftBox display="flex" justifyContent="space-between" alignItems="center" p={3}>

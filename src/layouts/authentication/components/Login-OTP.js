@@ -1,66 +1,87 @@
 import SoftBox from "components/SoftBox";
 import SoftButton from "components/SoftButton";
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import useStore from "../../../utils/UseStore";
+import { LoginAPI } from "utils/constants";
 
 const OTPVerification = () => {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isActive, setIsActive] = useState(false);  // Track if the button should be active
+  const [email, setEmail] = useState();
   const navigate = useNavigate();
-  // const [dataget,setData] = useState({});
+  const location = useLocation();
+  const { fetchData, data, isLoading, error, postData } = useStore();
+  const storedEmail = localStorage.getItem('loginEmail');
+  const queryParams = new URLSearchParams(location.search);
+  const otpFromQuery = queryParams.get('otp');
+  const emailFromQuery = queryParams.get('email');
 
-  
+  useEffect(() => {
+    if (storedEmail) {
+      setEmail(storedEmail);
+      localStorage.removeItem('loginEmail');
+    }
+    if (emailFromQuery) {
+      setEmail(emailFromQuery);
+    }
+    // Auto-fill OTP if provided in query params
+    if (otpFromQuery) {
+      const otpArray = otpFromQuery.split('').map(Number);
+      setOtp(otpArray.concat(Array(6 - otpArray.length).fill('')));
+      setIsActive(otpFromQuery.length === 6);
+    }
+    document.getElementById("otp-input-0").focus();
+  }, [otpFromQuery]);
 
   const handleInputChange = (e, index) => {
     const value = e.target.value;
     let newOtp = [...otp];
-
     if (value.length > 1) {
       newOtp[index] = "";
       return;
     }
-
     newOtp[index] = value;
     setOtp(newOtp);
-
     if (value !== "" && index < 5) {
       document.getElementById(`otp-input-${index + 1}`).focus();
     }
-
     if (e.key === "Backspace" && index > 0 && value === "") {
       document.getElementById(`otp-input-${index - 1}`).focus();
     }
-
     // Check if all fields are filled
     setIsActive(newOtp.every(val => val !== ""));  // Update button status
   };
 
-  useEffect(() => {
-    document.getElementById("otp-input-0").focus();
-  }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const otpValue = otp.join("");
-    if (otpValue === "123456") {
+    console.log(email);
+    const response = await fetchData(`/api/admin/login-verify?email=${email}&otp=${otpValue}`);
+    console.log(response);
+    if (response.success) {
+      toast.success(response.message);
+      localStorage.setItem("admin", data.admin);
       navigate("/dashboard");
     } else {
-      toast.error("Invalid OTP", {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "colored",
-      });
+      toast.error(response.message);
       setOtp(["", "", "", "", "", ""]);
     }
   };
 
+
+  const handleResendOtp = async () => {
+    const response = await postData(LoginAPI.resend_login_otp, { email });
+    if (response && response.success) {
+      toast.success(response.message)
+    }
+    else {
+      toast.error(response.message)
+    }
+  };
   return (
     <>
       <ToastContainer />
@@ -98,6 +119,17 @@ const OTPVerification = () => {
                 disabled={!isActive}  // Disable button if not all fields are filled
               >
                 Verify OTP
+              </SoftButton>
+            </SoftBox>
+            <SoftBox mt={2}>
+              <SoftButton
+                variant="text"
+                color="info"
+                fullWidth
+                onClick={handleResendOtp} // Define this function to handle OTP resend logic
+
+              >
+                Resend OTP
               </SoftButton>
             </SoftBox>
           </form>

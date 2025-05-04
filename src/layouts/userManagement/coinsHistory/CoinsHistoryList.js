@@ -1,12 +1,9 @@
 import Card from "@mui/material/Card";
-import Icon from "@mui/material/Icon";
 
-// Soft UI Dashboard React components
 import SoftBox from "components/SoftBox";
 import SoftTypography from "components/SoftTypography";
-
-// Billing page components
-import Transaction from "../Transaction";
+import Image1 from "assets/images/team-1.jpg"
+import CoinItem from "./CoinItem";
 
 function Transactions() {
   // Transaction data
@@ -14,55 +11,55 @@ function Transactions() {
     {
       id: "1",
       color: "error",
-      icon: "arrow_downward",
-      name: "Netflix",
+      icon: Image1,
+      name: "Player name",
       description: "27 March 2020, at 12:30 PM",
-      value: "- $ 2,500",
+      value: "- 2,500",
       category: "newest"
     },
     {
       id: "2",
       color: "success",
-      icon: "arrow_upward",
-      name: "Apple",
+      icon: Image1,
+      name: "Player name",
       description: "27 March 2020, at 04:30 AM",
-      value: "+ $ 2,000",
+      value: "+ 2,000",
       category: "newest"
     },
     {
       id: "3",
       color: "success",
-      icon: "arrow_upward",
-      name: "Stripe",
+      icon: Image1,
+      name: "Player name",
       description: "26 March 2020, at 13:45 PM",
-      value: "+ $ 750",
+      value: "+ 750",
       category: "yesterday"
     },
     {
       id: "4",
       color: "success",
-      icon: "arrow_upward",
-      name: "HubSpot",
+      icon: Image1,
+      name: "Player name",
       description: "26 March 2020, at 12:30 PM",
-      value: "+ $ 1,000",
+      value: "+ 1,000",
       category: "yesterday"
     },
     {
       id: "5",
       color: "success",
-      icon: "arrow_upward",
-      name: "Creative Tim",
+      icon: Image1,
+      name: "Player name",
       description: "26 March 2020, at 08:30 AM",
-      value: "+ $ 2,500",
+      value: "+ 2,500",
       category: "yesterday"
     },
     {
       id: "6",
-      color: "dark",
-      icon: "priority_high",
-      name: "Webflow",
+      color: "success",
+      icon: Image1,
+      name: "Player name",
       description: "26 March 2020, at 05:00 AM",
-      value: "Pending",
+      value: "+ 1,000",
       category: "yesterday"
     }
   ];
@@ -71,18 +68,8 @@ function Transactions() {
     <Card sx={{ height: "100%" }}>
       <SoftBox display="flex" justifyContent="space-between" alignItems="center" pt={3} px={2}>
         <SoftTypography variant="h6" fontWeight="medium" textTransform="capitalize">
-          Transactions
+          Coins History
         </SoftTypography>
-        <SoftBox display="flex" alignItems="flex-start">
-          <SoftBox color="text" mr={0.5} lineHeight={0}>
-            <Icon color="inherit" fontSize="small">
-              date_range
-            </Icon>
-          </SoftBox>
-          <SoftTypography variant="button" color="text" fontWeight="regular">
-            23 - 30 March 2020
-          </SoftTypography>
-        </SoftBox>
       </SoftBox>
 
       {/* Render transactions */}
@@ -111,7 +98,7 @@ function Transactions() {
             {transactions
               .filter((transaction) => transaction.category === category)
               .map((transaction) => (
-                <Transaction
+                <CoinItem
                   key={transaction.id}
                   id={transaction.id}
                   color={transaction.color}

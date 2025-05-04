@@ -12,6 +12,10 @@ import CoinImage from "assets/images/coins.png"
 import DiamondImage from "assets/images/diamond.png"
 import BoosterImage from "assets/images/booster.png"
 import Dice from "assets/images/dice.png"
+import FolderIcon from '@mui/icons-material/Folder';
+import HourglassDisabledIcon from '@mui/icons-material/HourglassDisabled';
+import ContentPasteRoundedIcon from '@mui/icons-material/ContentPasteRounded';
+import { Icon } from "@mui/material";
 
 function ProfilesList({ title, profiles }) {
   const [displayedProfiles, setDisplayedProfiles] = useState([]);
@@ -84,16 +88,28 @@ function ProfilesList({ title, profiles }) {
               </tr>
             </thead>
             <tbody>
+              {displayedProfiles.length === 0 && !loading && (
+                <tr>
+                  <td colSpan={4}>
+                    <SoftBox display="flex" flexDirection="column" alignItems="center" justifyContent="center" p={4}>
+                      <Icon sx={{ fontSize: "150rem", color: "#333" }}>
+                        <HourglassDisabledIcon />
+                      </Icon>
+
+                    </SoftBox>
+                  </td>
+                </tr>
+              )}
               {displayedProfiles.map(({ image, name, id, badge, winAmount }, index) => (
                 <tr key={index}>
                   <td style={styles.tdname}>
                     <SoftBox display="flex" alignItems="center">
                       {badge === 1 ? (
-                        <SoftAvatar src={badge1} alt="Badge1"  />
+                        <SoftAvatar src={badge1} alt="Badge1" />
                       ) : badge === 2 ? (
-                        <SoftAvatar src={badge2} alt="Badge2"  />
+                        <SoftAvatar src={badge2} alt="Badge2" />
                       ) : badge === 3 ? (
-                        <SoftAvatar src={badge3} alt="Badge3"   />
+                        <SoftAvatar src={badge3} alt="Badge3" />
                       ) : (
                         <span style={styles.badgeText}>{badge}</span>
                       )}
